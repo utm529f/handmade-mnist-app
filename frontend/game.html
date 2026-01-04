@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ゲームであそぶ - てづくりMNIST</title>
+
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="ゲームであそぶ - てづくりMNIST">
+  <meta name="description" content="じぶんのもじでさんすうもんだいにちょうせん">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✋</text></svg>">
+
+  <!-- Theme Color -->
+  <meta name="theme-color" content="#fef3c7">
+
+  <!-- TailwindCSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Alpine.js -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- グローバルローディングオーバーレイ -->
+  <div id="globalLoadingOverlay" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50" style="display: none;">
+    <div class="text-center">
+      <div class="loading-spinner mb-4"></div>
+      <p id="loadingMessage" class="text-xl font-bold">よみこみちゅう...</p>
+    </div>
+  </div>
+
+  <!-- グローバルエラーハンドリング -->
+  <script>
+  window.addEventListener('error', (e) => {
+    if (e.message.includes('cdn') || e.message.includes('unpkg')) {
+      showErrorMessage('インターネットせつぞくがひつようです。\nWi-Fiやモバイルつうしんをかくにんしてください。');
+    }
+  }, true);
+
+  function showErrorMessage(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    errorDiv.innerHTML = `
+      <div class="bg-white rounded-lg p-6 max-w-md mx-4 text-center">
+        <div class="text-4xl mb-4">⚠️</div>
+        <p class="text-lg font-bold mb-4 whitespace-pre-line">${message}</p>
+        <button onclick="location.reload()" class="btn-primary">
+          もういちど よみこむ
+        </button>
+      </div>
+    `;
+    document.body.appendChild(errorDiv);
+  }
+
+  function showLoading(message = 'よみこみちゅう...') {
+    const overlay = document.getElementById('globalLoadingOverlay');
+    const messageEl = document.getElementById('loadingMessage');
+    if (overlay && messageEl) {
+      messageEl.textContent = message;
+      overlay.style.display = 'flex';
+    }
+  }
+
+  function hideLoading() {
+    const overlay = document.getElementById('globalLoadingOverlay');
+    if (overlay) {
+      overlay.style.display = 'none';
+    }
+  }
+
+  // 28x28画像をCanvasに表示
+  function displayImageOnCanvas(canvasId, imageData, size) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return false;
+
+    canvas.width = size;
+    canvas.height = size;
+
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.createImageData(28, 28);
+
+    for (let i = 0; i < imageData.length; i++) {
+      const value = Math.round(imageData[i] * 255);
+      imgData.data[i * 4] = value;
+      imgData.data[i * 4 + 1] = value;
+      imgData.data[i * 4 + 2] = value;
+      imgData.data[i * 4 + 3] = 255;
+    }
+
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = 28;
+    tempCanvas.height = 28;
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx.putImageData(imgData, 0, 0);
+
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(tempCanvas, 0, 0, 28, 28, 0, 0, size, size);
+
+    return true;
+  }
+  </script>
+
+  <div class="container mx-auto px-4 py-4" x-data="gameApp()">
+    <!-- タブナビゲーション -->
+    <div class="mb-4">
+      <div class="flex gap-2 bg-white rounded-lg p-2 shadow">
+        <a href="collect.html" class="flex-1">
+          <button class="w-full py-3 px-4 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
+            📝 もじをかく
+          </button>
+        </a>
+        <a href="train.html" class="flex-1">
+          <button class="w-full py-3 px-4 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
+            🧠 がくしゅう
+          </button>
+        </a>
+        <a href="game.html" class="flex-1">
+          <button class="w-full py-3 px-4 rounded-lg bg-indigo-500 text-white font-bold">
+            🎮 ゲーム
+          </button>
+        </a>
+      </div>
+      <div class="mt-2 text-center">
+        <a href="index.html" class="text-sm text-gray-600 hover:text-gray-900">
+          ← メニューへもどる
+        </a>
+      </div>
+    </div>
+
+    <!-- 条件チェック -->
+    <template x-if="!canPlayGame">
+      <div class="card">
+        <h2 class="text-xl font-bold mb-4 text-center">⚠️ ゲームをはじめられません</h2>
+
+        <div class="space-y-4">
+          <!-- データ条件 -->
+          <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+            <div>
+              <div class="font-bold">データしゅうしゅう</div>
+              <div class="text-sm text-gray-600" x-text="`${dataStatus.total}/30 サンプル`"></div>
+            </div>
+            <div x-text="dataStatus.valid ? '✓' : '✗'"
+                 :class="dataStatus.valid ? 'text-green-600 text-3xl' : 'text-red-600 text-3xl'">
+            </div>
+          </div>
+
+          <!-- CNN条件 -->
+          <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+            <div>
+              <div class="font-bold">CNN がくしゅう</div>
+              <div class="text-sm text-gray-600">すうじにんしき</div>
+            </div>
+            <div x-text="cnnTrained ? '✓' : '✗'"
+                 :class="cnnTrained ? 'text-green-600 text-3xl' : 'text-red-600 text-3xl'">
+            </div>
+          </div>
+        </div>
+
+        <!-- 誘導ボタン -->
+        <div class="mt-6 space-y-3">
+          <template x-if="!dataStatus.valid">
+            <a href="collect.html">
+              <button class="btn-secondary w-full">📝 もじをかく がめんへ</button>
+            </a>
+          </template>
+
+          <template x-if="!cnnTrained">
+            <a href="train.html">
+              <button class="btn-secondary w-full">🧠 がくしゅう がめんへ</button>
+            </a>
+          </template>
+        </div>
+      </div>
+    </template>
+
+    <!-- ゲーム画面 -->
+    <template x-if="canPlayGame">
+      <div>
+        <!-- スコア -->
+        <div class="card text-center">
+          <h2 class="text-lg font-bold mb-2">スコア</h2>
+          <div class="text-4xl font-bold text-primary" x-text="score"></div>
+        </div>
+
+        <!-- 問題表示エリア -->
+        <div class="card">
+          <h3 class="text-center text-2xl font-bold mb-4">もんだい</h3>
+
+          <!-- 問題画像表示 -->
+          <div class="flex items-center justify-center gap-4 mb-4">
+            <!-- num1画像 -->
+            <canvas id="num1Canvas" width="56" height="56" class="border-2 border-gray-300 rounded"></canvas>
+
+            <!-- 演算子 -->
+            <span class="text-4xl font-bold mx-2" x-text="currentQuestion ? currentQuestion.operator : '+'"></span>
+
+            <!-- num2画像 -->
+            <canvas id="num2Canvas" width="56" height="56" class="border-2 border-gray-300 rounded"></canvas>
+
+            <!-- = -->
+            <span class="text-4xl font-bold mx-2">=</span>
+
+            <!-- 答え -->
+            <span class="text-4xl font-bold">?</span>
+          </div>
+        </div>
+
+        <!-- 回答入力エリア -->
+        <div class="card">
+          <h3 class="text-center text-lg font-bold mb-4">こたえをかいてね</h3>
+
+          <div class="flex justify-center mb-4">
+            <!-- 1の位Canvas -->
+            <div class="text-center">
+              <div class="canvas-container">
+                <canvas id="answerCanvas" width="280" height="280"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- ボタン -->
+          <div class="flex gap-4 justify-center">
+            <button @click="clearAnswer()" class="btn-secondary">
+              🗑️ けす
+            </button>
+            <button @click="submitAnswer()" class="btn-primary">
+              ✅ こたえる
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </template>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/canvas.js"></script>
+  <script>
+    function gameApp() {
+      return {
+        dataStatus: {
+          valid: false,
+          total: 0,
+          perDigit: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        },
+        cnnTrained: false,
+        canPlayGame: false,
+        score: 0,
+        canvasHandler: null,
+        currentQuestion: null,
+
+        async init() {
+          showLoading('じょうけんをかくにんちゅう...');
+
+          try {
+            await this.checkRequirements();
+
+            if (this.canPlayGame) {
+              // Canvasを初期化
+              this.canvasHandler = initCanvas('answerCanvas', 280);
+
+              showLoading('もんだいをさくせいちゅう...');
+              // 最初の問題を生成
+              await this.startGame();
+            }
+
+            hideLoading();
+          } catch (error) {
+            hideLoading();
+            console.error('Initialization error:', error);
+            alert('初期化に失敗しました。\nバックエンドサーバーが起動しているか確認してください。');
+          }
+        },
+
+        async checkRequirements() {
+          // データ条件チェック
+          this.dataStatus = await checkDataRequirements();
+
+          // モデル学習済みチェック（CNNのみ）
+          const modelsStatus = await getModelsStatus();
+          this.cnnTrained = modelsStatus.cnn.trained;
+
+          // 全条件を満たすか（データ条件 + CNN学習済み）
+          this.canPlayGame = this.dataStatus.valid && this.cnnTrained;
+        },
+
+        async startGame() {
+          try {
+            // 問題を生成
+            this.currentQuestion = await generateQuestion("mixed");
+
+            // 問題画像を表示
+            this.displayQuestion();
+
+            // 回答Canvasをクリア
+            this.clearAnswer();
+          } catch (error) {
+            console.error('Failed to start game:', error);
+            alert('問題の生成に失敗しました: ' + error.message);
+          }
+        },
+
+        displayQuestion() {
+          if (!this.currentQuestion) return;
+
+          // num1画像をCanvasに表示
+          const num1Success = displayImageOnCanvas('num1Canvas', this.currentQuestion.num1Image, 56);
+          const num2Success = displayImageOnCanvas('num2Canvas', this.currentQuestion.num2Image, 56);
+
+          if (!num1Success || !num2Success) {
+            console.error('Failed to display question digits');
+            alert('数字の表示に失敗しました。');
+          }
+        },
+
+        clearAnswer() {
+          if (this.canvasHandler) {
+            this.canvasHandler.clear();
+          }
+        },
+
+        async submitAnswer() {
+          if (!this.currentQuestion) {
+            alert('もんだいがありません');
+            return;
+          }
+
+          if (!this.canvasHandler) {
+            alert('キャンバスが初期化されていません');
+            return;
+          }
+
+          // 画像データを取得
+          const imageData = this.canvasHandler.getImageData();
+          const isBlank = imageData.every(val => val === 0);
+
+          if (isBlank) {
+            alert('こたえをかいてください');
+            return;
+          }
+
+          try {
+            showLoading('こたえをかくにんちゅう...');
+
+            // サーバーに回答を送信
+            const result = await submitAnswer(
+              this.currentQuestion.questionId,
+              imageData,
+              null
+            );
+
+            hideLoading();
+
+            // スコア更新
+            if (result.correct) {
+              this.score++;
+              alert(`🎉 せいかい！\nあなたのこたえ: ${result.recognizedAnswer}\nスコア: ${this.score}`);
+            } else {
+              alert(`❌ ざんねん...\nあなたのこたえ: ${result.recognizedAnswer}\nせいかい: ${result.correctAnswer}\nスコア: ${this.score}`);
+            }
+
+            // 次の問題へ
+            showLoading('つぎのもんだいをさくせいちゅう...');
+            await this.startGame();
+            hideLoading();
+
+          } catch (error) {
+            hideLoading();
+            console.error('Failed to submit answer:', error);
+            alert('回答の送信に失敗しました: ' + error.message);
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>

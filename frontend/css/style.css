@@ -1,0 +1,280 @@
+/* カラーパレット（子ども向け明るい配色） */
+:root {
+  --primary: #6366f1;      /* インディゴ */
+  --secondary: #f59e0b;    /* アンバー */
+  --success: #10b981;      /* エメラルド */
+  --error: #ef4444;        /* レッド */
+  --background: #fef3c7;   /* クリーム */
+  --text: #1f2937;         /* グレー900 */
+  --border: #d1d5db;       /* グレー300 */
+}
+
+/* 全体のベーススタイル */
+body {
+  font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
+  background-color: var(--background);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* メインコンテナ */
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* カスタムボタンスタイル */
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: bold;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:hover {
+  background-color: #4f46e5;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-secondary {
+  background-color: var(--secondary);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background-color: #d97706;
+}
+
+.btn-back {
+  background-color: #9ca3af;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-back:hover {
+  background-color: #6b7280;
+}
+
+/* Canvas スタイル */
+.canvas-container {
+  border: 3px solid var(--primary);
+  border-radius: 0.75rem;
+  background-color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem;
+}
+
+canvas {
+  border-radius: 0.5rem;
+  cursor: crosshair;
+  display: block;
+}
+
+/* プログレスバー */
+.progress-bar {
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  height: 1.5rem;
+  overflow: hidden;
+}
+
+.progress-fill {
+  background-color: var(--success);
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 9999px;
+}
+
+/* ヘッダー */
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* カード */
+.card {
+  background-color: white;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+}
+
+/* ステータス表示 */
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: bold;
+}
+
+.status-success {
+  background-color: var(--success);
+  color: white;
+}
+
+.status-warning {
+  background-color: var(--secondary);
+  color: white;
+}
+
+.status-error {
+  background-color: var(--error);
+  color: white;
+}
+
+/* 数字切り替えボタン */
+.digit-button {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  font-weight: bold;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  border: 2px solid transparent;
+  user-select: none;
+}
+
+.digit-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.digit-button:active {
+  transform: translateY(0);
+}
+
+/* ローディングスピナー */
+.loading-spinner {
+  border: 4px solid #f3f4f6;
+  border-top: 4px solid #6366f1;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* レスポンシブCanvas */
+.canvas-container {
+  max-width: 100%;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+/* モバイル: 小さめCanvas */
+@media (max-width: 640px) {
+  .canvas-container canvas {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 280px;
+  }
+}
+
+/* ランドスケープモバイル */
+@media (max-height: 600px) and (orientation: landscape) {
+  .canvas-container canvas {
+    max-height: 200px;
+    width: auto !important;
+  }
+
+  .container {
+    padding: 0.5rem;
+  }
+
+  .card {
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* タッチ最適化ボタン (最小44x44px) */
+.btn-primary {
+  min-height: 44px;
+  min-width: 120px;
+}
+
+.btn-secondary {
+  min-height: 44px;
+  min-width: 100px;
+}
+
+.btn-back {
+  min-height: 44px;
+  min-width: 80px;
+}
+
+.digit-button {
+  min-height: 56px;
+}
+
+@media (max-width: 640px) {
+  .digit-button {
+    min-height: 60px;
+  }
+}
+
+/* レスポンシブフォントサイズ */
+:root {
+  --font-size-base: 16px;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --font-size-base: 14px;
+    --font-size-lg: 1rem;
+    --font-size-xl: 1.125rem;
+    --font-size-2xl: 1.25rem;
+    --font-size-3xl: 1.5rem;
+    --font-size-4xl: 1.875rem;
+  }
+
+  .container {
+    padding: 0.75rem;
+    max-width: 100%;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .container {
+    max-width: 768px;
+  }
+}

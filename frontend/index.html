@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>てづくりMNIST - メニュー</title>
+
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="てづくりMNIST - じぶんのもじで さんすうをまなぼう！">
+  <meta name="description" content="こども向けのきかいがくしゅうアプリ。じぶんでかいたすうじをつかって、コンピュータにがくしゅうさせ、さんすうゲームであそべます。">
+  <meta name="keywords" content="機械学習,教育,子ども,算数,MNIST,PyTorch,FastAPI">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✋</text></svg>">
+
+  <!-- Theme Color -->
+  <meta name="theme-color" content="#fef3c7">
+
+  <!-- TailwindCSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Alpine.js -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- グローバルローディングオーバーレイ -->
+  <div id="globalLoadingOverlay" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50" style="display: none;">
+    <div class="text-center">
+      <div class="loading-spinner mb-4"></div>
+      <p id="loadingMessage" class="text-xl font-bold">よみこみちゅう...</p>
+    </div>
+  </div>
+
+  <!-- グローバルエラーハンドリング -->
+  <script>
+  window.addEventListener('error', (e) => {
+    if (e.message.includes('cdn') || e.message.includes('unpkg')) {
+      showErrorMessage('インターネットせつぞくがひつようです。\nWi-Fiやモバイルつうしんをかくにんしてください。');
+    }
+  }, true);
+
+  function showErrorMessage(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    errorDiv.innerHTML = `
+      <div class="bg-white rounded-lg p-6 max-w-md mx-4 text-center">
+        <div class="text-4xl mb-4">⚠️</div>
+        <p class="text-lg font-bold mb-4 whitespace-pre-line">${message}</p>
+        <button onclick="location.reload()" class="btn-primary">
+          もういちど よみこむ
+        </button>
+      </div>
+    `;
+    document.body.appendChild(errorDiv);
+  }
+
+  function showLoading(message = 'よみこみちゅう...') {
+    const overlay = document.getElementById('globalLoadingOverlay');
+    const messageEl = document.getElementById('loadingMessage');
+    if (overlay && messageEl) {
+      messageEl.textContent = message;
+      overlay.style.display = 'flex';
+    }
+  }
+
+  function hideLoading() {
+    const overlay = document.getElementById('globalLoadingOverlay');
+    if (overlay) {
+      overlay.style.display = 'none';
+    }
+  }
+  </script>
+
+  <div class="container mx-auto px-4 py-8" x-data="menuApp()">
+    <!-- ヘッダー -->
+    <div class="header text-center">
+      <h1 class="text-4xl font-bold mb-2">✋ てづくりMNIST</h1>
+      <p class="text-lg">じぶんのもじで さんすうをまなぼう！</p>
+    </div>
+
+    <!-- メニューボタン -->
+    <div class="space-y-4 mb-8">
+      <!-- もじをかく -->
+      <a href="collect.html" class="block">
+        <button class="btn-primary w-full">
+          📝 もじをかく
+        </button>
+      </a>
+
+      <!-- がくしゅう -->
+      <a href="train.html" class="block">
+        <button class="btn-primary w-full">
+          🧠 がくしゅう
+        </button>
+      </a>
+
+      <!-- ゲームであそぶ -->
+      <a href="game.html" class="block">
+        <button class="btn-primary w-full">
+          🎮 ゲームであそぶ
+        </button>
+      </a>
+    </div>
+
+    <!-- ステータス表示 -->
+    <div class="card">
+      <h2 class="text-xl font-bold mb-4">げんざいのじょうきょう</h2>
+
+      <div class="space-y-3">
+        <!-- データ収集状況 -->
+        <div class="flex items-center justify-between">
+          <span class="font-semibold">しゅうしゅうずみ:</span>
+          <span class="text-lg" x-text="`${status.total}/100 サンプル`"></span>
+        </div>
+
+        <!-- モデル学習状況 -->
+        <div class="flex items-center justify-between">
+          <span class="font-semibold">モデル:</span>
+          <span x-text="status.modelStatus" class="status-badge"
+                :class="status.modelTrained ? 'status-success' : 'status-warning'">
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 説明 -->
+    <div class="card mt-4">
+      <h3 class="text-lg font-bold mb-2">あそびかた</h3>
+      <ol class="list-decimal list-inside space-y-2 text-sm">
+        <li>「もじをかく」で 0-9 のすうじをかく</li>
+        <li>「がくしゅう」でコンピュータにおぼえてもらう</li>
+        <li>「ゲームであそぶ」でさんすうもんだいにちょうせん！</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/api.js"></script>
+  <script>
+    function menuApp() {
+      return {
+        status: {
+          total: 0,
+          modelStatus: 'みがくしゅう',
+          modelTrained: false
+        },
+
+        async init() {
+          try {
+            console.log('Updating status...');
+            await this.updateStatus();
+            console.log('Status update complete');
+          } catch (error) {
+            console.error('Initialization error:', error);
+            // メニュー画面では警告を出さず、デフォルト値を表示
+            console.warn('Using default status values');
+          }
+        },
+
+        async updateStatus() {
+          try {
+            // データ収集状況を取得
+            const dataStatus = await checkDataRequirements();
+            this.status.total = dataStatus.total;
+
+            // モデル学習状況を確認
+            const modelsStatus = await getModelsStatus();
+
+            if (modelsStatus.cnn.trained) {
+              this.status.modelStatus = 'がくしゅうずみ ✓';
+              this.status.modelTrained = true;
+            } else {
+              this.status.modelStatus = 'みがくしゅう';
+              this.status.modelTrained = false;
+            }
+          } catch (error) {
+            console.error('Failed to update status:', error);
+            // フォールバック: デフォルト値を維持
+            this.status.total = 0;
+            this.status.modelStatus = 'みがくしゅう';
+            this.status.modelTrained = false;
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>

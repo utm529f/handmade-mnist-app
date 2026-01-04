@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>もじをかく - てづくりMNIST</title>
+
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="もじをかく - てづくりMNIST">
+  <meta name="description" content="すうじをかいてコンピュータにおぼえてもらおう">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✋</text></svg>">
+
+  <!-- Theme Color -->
+  <meta name="theme-color" content="#fef3c7">
+
+  <!-- TailwindCSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Alpine.js -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- グローバルローディングオーバーレイ -->
+  <div id="globalLoadingOverlay" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50" style="display: none;">
+    <div class="text-center">
+      <div class="loading-spinner mb-4"></div>
+      <p id="loadingMessage" class="text-xl font-bold">よみこみちゅう...</p>
+    </div>
+  </div>
+
+  <!-- グローバルエラーハンドリング -->
+  <script>
+  window.addEventListener('error', (e) => {
+    if (e.message.includes('cdn') || e.message.includes('unpkg')) {
+      showErrorMessage('インターネットせつぞくがひつようです。\nWi-Fiやモバイルつうしんをかくにんしてください。');
+    }
+  }, true);
+
+  function showErrorMessage(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    errorDiv.innerHTML = `
+      <div class="bg-white rounded-lg p-6 max-w-md mx-4 text-center">
+        <div class="text-4xl mb-4">⚠️</div>
+        <p class="text-lg font-bold mb-4 whitespace-pre-line">${message}</p>
+        <button onclick="location.reload()" class="btn-primary">
+          もういちど よみこむ
+        </button>
+      </div>
+    `;
+    document.body.appendChild(errorDiv);
+  }
+
+  function showLoading(message = 'よみこみちゅう...') {
+    const overlay = document.getElementById('globalLoadingOverlay');
+    const messageEl = document.getElementById('loadingMessage');
+    if (overlay && messageEl) {
+      messageEl.textContent = message;
+      overlay.style.display = 'flex';
+    }
+  }
+
+  function hideLoading() {
+    const overlay = document.getElementById('globalLoadingOverlay');
+    if (overlay) {
+      overlay.style.display = 'none';
+    }
+  }
+  </script>
+
+  <div class="container mx-auto px-4 py-4" x-data="collectApp()">
+    <!-- タブナビゲーション -->
+    <div class="mb-4">
+      <div class="flex gap-2 bg-white rounded-lg p-2 shadow">
+        <a href="collect.html" class="flex-1">
+          <button class="w-full py-3 px-4 rounded-lg bg-indigo-500 text-white font-bold">
+            📝 もじをかく
+          </button>
+        </a>
+        <a href="train.html" class="flex-1">
+          <button class="w-full py-3 px-4 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
+            🧠 がくしゅう
+          </button>
+        </a>
+        <a href="game.html" class="flex-1">
+          <button class="w-full py-3 px-4 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
+            🎮 ゲーム
+          </button>
+        </a>
+      </div>
+      <div class="mt-2 text-center">
+        <a href="index.html" class="text-sm text-gray-600 hover:text-gray-900">
+          ← メニューへもどる
+        </a>
+      </div>
+    </div>
+
+    <!-- 指示文 -->
+    <div class="card text-center">
+      <h2 class="text-3xl font-bold mb-2">
+        「<span class="text-primary" x-text="currentDigit"></span>」をかいてね
+      </h2>
+      <p class="text-sm text-gray-600">
+        <span x-text="digitProgress[currentDigit]"></span> / 10 まい
+      </p>
+    </div>
+
+    <!-- 数字切り替えボタン -->
+    <div class="card mt-4">
+      <h3 class="text-sm font-bold mb-2 text-gray-600">すうじをえらぶ</h3>
+
+      <!-- デスクトップ: 1行表示 -->
+      <div class="hidden sm:grid grid-cols-10 gap-2">
+        <template x-for="digit in [0,1,2,3,4,5,6,7,8,9]" :key="digit">
+          <button
+            @click="switchDigit(digit)"
+            :class="getDigitButtonClass(digit)"
+            class="h-14 flex flex-col items-center justify-center"
+          >
+            <div class="text-lg font-bold" x-text="getDigitButtonText(digit)"></div>
+            <div class="text-xs" x-text="getDigitButtonSubText(digit)"></div>
+          </button>
+        </template>
+      </div>
+
+      <!-- モバイル: 2行表示 -->
+      <div class="grid grid-cols-5 gap-2 sm:hidden">
+        <template x-for="digit in [0,1,2,3,4,5,6,7,8,9]" :key="digit">
+          <button
+            @click="switchDigit(digit)"
+            :class="getDigitButtonClass(digit)"
+            class="h-14 flex flex-col items-center justify-center"
+          >
+            <div class="text-lg font-bold" x-text="getDigitButtonText(digit)"></div>
+            <div class="text-xs" x-text="getDigitButtonSubText(digit)"></div>
+          </button>
+        </template>
+      </div>
+    </div>
+
+    <!-- Canvas -->
+    <div class="canvas-container mx-auto" style="width: fit-content;">
+      <canvas id="drawCanvas"></canvas>
+    </div>
+
+    <!-- ボタン -->
+    <div class="flex gap-4 justify-center mt-6">
+      <button @click="clearCanvas()" class="btn-secondary">
+        🗑️ けす
+      </button>
+      <button @click="saveAndNext()" class="btn-primary">
+        ✅ つぎへ
+      </button>
+    </div>
+
+    <!-- 進捗表示 -->
+    <div class="card mt-6">
+      <h3 class="text-lg font-bold mb-3">しんちょく</h3>
+
+      <!-- 現在の数字の進捗 -->
+      <div class="mb-4">
+        <div class="flex justify-between text-sm mb-1">
+          <span>すうじ <span x-text="currentDigit"></span></span>
+          <span x-text="`${digitProgress[currentDigit]}/10`"></span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill"
+               :style="`width: ${(digitProgress[currentDigit] / 10) * 100}%`">
+          </div>
+        </div>
+      </div>
+
+      <!-- 全体の進捗 -->
+      <div class="mb-4">
+        <div class="flex justify-between text-sm mb-1">
+          <span>ぜんたい</span>
+          <span x-text="`${totalSamples}/100`"></span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill"
+               :style="`width: ${(totalSamples / 100) * 100}%`">
+          </div>
+        </div>
+      </div>
+
+      <!-- 各数字の収集状況 -->
+      <div class="mt-4">
+        <h4 class="text-sm font-bold mb-2">しゅうしゅうじょうきょう</h4>
+        <div class="grid grid-cols-5 gap-2 text-xs">
+          <template x-for="digit in [0,1,2,3,4,5,6,7,8,9]" :key="digit">
+            <div class="text-center">
+              <div class="font-bold" x-text="digit"></div>
+              <div class="progress-bar h-2">
+                <div class="progress-fill"
+                     :style="`width: ${(digitProgress[digit] / 10) * 100}%`">
+                </div>
+              </div>
+              <div x-text="`${digitProgress[digit]}/10`"></div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/canvas.js"></script>
+  <script>
+    function collectApp() {
+      return {
+        currentDigit: 0,
+        digitProgress: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        totalSamples: 0,
+        canvasHandler: null,
+
+        async init() {
+          try {
+            // 1. Canvasを初期化
+            this.canvasHandler = initCanvas('drawCanvas', 280);
+
+            // 2. 進捗を読み込み
+            console.log('Loading progress...');
+            await this.loadProgress();
+
+            // 3. 次の数字を見つける
+            this.findNextDigit();
+            console.log('Initialization complete');
+          } catch (error) {
+            console.error('Initialization error:', error);
+            alert('データの読み込みに失敗しました。\nバックエンドサーバーが起動しているか確認してください。');
+          }
+        },
+
+        async loadProgress() {
+          try {
+            const dataStatus = await checkDataRequirements();
+            this.digitProgress = dataStatus.perDigit;
+            this.totalSamples = dataStatus.total;
+          } catch (error) {
+            console.error('Failed to load progress:', error);
+            // フォールバック: デフォルト値を設定
+            this.digitProgress = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            this.totalSamples = 0;
+            throw error;
+          }
+        },
+
+        findNextDigit() {
+          // 10枚未満の最初の数字を探す
+          for (let digit = 0; digit < 10; digit++) {
+            if (this.digitProgress[digit] < 10) {
+              this.currentDigit = digit;
+              return;
+            }
+          }
+          // すべて10枚以上なら0に戻る
+          this.currentDigit = 0;
+        },
+
+        clearCanvas() {
+          this.canvasHandler.clear();
+        },
+
+        switchDigit(digit) {
+          this.clearCanvas();
+          this.currentDigit = digit;
+        },
+
+        getDigitButtonClass(digit) {
+          const count = this.digitProgress[digit];
+          const isActive = this.currentDigit === digit;
+
+          let baseClass = 'digit-button text-center rounded-lg font-bold transition-all duration-200 cursor-pointer ';
+
+          // 収集状況に応じた色
+          if (count === 0) {
+            baseClass += 'bg-gray-200 text-gray-500 ';
+          } else if (count < 10) {
+            baseClass += 'bg-yellow-400 text-white ';
+          } else {
+            baseClass += 'bg-emerald-500 text-white ';
+          }
+
+          // アクティブ状態
+          if (isActive) {
+            baseClass += 'ring-4 ring-indigo-500 ring-opacity-50 scale-105 ';
+          }
+
+          return baseClass;
+        },
+
+        getDigitButtonText(digit) {
+          const count = this.digitProgress[digit];
+          if (count >= 10) {
+            return `${digit} ✓`;
+          }
+          return digit;
+        },
+
+        getDigitButtonSubText(digit) {
+          const count = this.digitProgress[digit];
+          if (count > 0 && count < 10) {
+            return `${count}/10`;
+          }
+          return '';
+        },
+
+        async saveAndNext() {
+          const saveButton = event.target;
+          const originalText = saveButton.textContent;
+          saveButton.disabled = true;
+          saveButton.textContent = 'ほぞんちゅう...';
+
+          try {
+            // 画像データを取得
+            const imageData = this.canvasHandler.getImageData();
+
+            // APIに保存
+            await saveSample(this.currentDigit, imageData);
+
+            saveButton.textContent = '✅ ほぞんしました！';
+
+            // 進捗を更新
+            this.digitProgress[this.currentDigit]++;
+            this.totalSamples++;
+
+            // Canvasをクリア
+            this.clearCanvas();
+
+            // 10枚達成したら次の数字へ
+            if (this.digitProgress[this.currentDigit] >= 10) {
+              const previousDigit = this.currentDigit;
+              this.findNextDigit();
+              if (this.currentDigit !== previousDigit) {
+                alert(`すうじ ${previousDigit} のしゅうしゅうが10まいたっせい！\nつぎは ${this.currentDigit} をかきましょう。`);
+              }
+            }
+
+            setTimeout(() => {
+              saveButton.textContent = originalText;
+              saveButton.disabled = false;
+            }, 500);
+
+          } catch (error) {
+            console.error('Save error:', error);
+            alert('ほぞんにしっぱいしました。\nバックエンドサーバーが起動しているか確認してください。\n' + (error.message || ''));
+            saveButton.textContent = originalText;
+            saveButton.disabled = false;
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>

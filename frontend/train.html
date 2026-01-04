@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>がくしゅう - てづくりMNIST</title>
+
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="がくしゅう - てづくりMNIST">
+  <meta name="description" content="コンピュータにすうじをがくしゅうしてもらおう">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✋</text></svg>">
+
+  <!-- Theme Color -->
+  <meta name="theme-color" content="#fef3c7">
+
+  <!-- TailwindCSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Alpine.js -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- グローバルローディングオーバーレイ -->
+  <div id="globalLoadingOverlay" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50" style="display: none;">
+    <div class="text-center">
+      <div class="loading-spinner mb-4"></div>
+      <p id="loadingMessage" class="text-xl font-bold">よみこみちゅう...</p>
+    </div>
+  </div>
+
+  <!-- グローバルエラーハンドリング -->
+  <script>
+  window.addEventListener('error', (e) => {
+    if (e.message.includes('cdn') || e.message.includes('unpkg')) {
+      showErrorMessage('インターネットせつぞくがひつようです。\nWi-Fiやモバイルつうしんをかくにんしてください。');
+    }
+  }, true);
+
+  function showErrorMessage(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    errorDiv.innerHTML = `
+      <div class="bg-white rounded-lg p-6 max-w-md mx-4 text-center">
+        <div class="text-4xl mb-4">⚠️</div>
+        <p class="text-lg font-bold mb-4 whitespace-pre-line">${message}</p>
+        <button onclick="location.reload()" class="btn-primary">
+          もういちど よみこむ
+        </button>
+      </div>
+    `;
+    document.body.appendChild(errorDiv);
+  }
+
+  function showLoading(message = 'よみこみちゅう...') {
+    const overlay = document.getElementById('globalLoadingOverlay');
+    const messageEl = document.getElementById('loadingMessage');
+    if (overlay && messageEl) {
+      messageEl.textContent = message;
+      overlay.style.display = 'flex';
+    }
+  }
+
+  function hideLoading() {
+    const overlay = document.getElementById('globalLoadingOverlay');
+    if (overlay) {
+      overlay.style.display = 'none';
+    }
+  }
+  </script>
+
+  <div class="container mx-auto px-4 py-4" x-data="trainApp()">
+    <!-- タブナビゲーション -->
+    <div class="mb-4">
+      <div class="flex gap-2 bg-white rounded-lg p-2 shadow">
+        <a href="collect.html" class="flex-1">
+          <button class="w-full py-3 px-4 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
+            📝 もじをかく
+          </button>
+        </a>
+        <a href="train.html" class="flex-1">
+          <button class="w-full py-3 px-4 rounded-lg bg-indigo-500 text-white font-bold">
+            🧠 がくしゅう
+          </button>
+        </a>
+        <a href="game.html" class="flex-1">
+          <button class="w-full py-3 px-4 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
+            🎮 ゲーム
+          </button>
+        </a>
+      </div>
+      <div class="mt-2 text-center">
+        <a href="index.html" class="text-sm text-gray-600 hover:text-gray-900">
+          ← メニューへもどる
+        </a>
+      </div>
+    </div>
+
+    <!-- データ状況表示 -->
+    <div class="card">
+      <h2 class="text-xl font-bold mb-4">データじょうきょう</h2>
+
+      <div class="flex items-center justify-between mb-4">
+        <span class="font-semibold">しゅうしゅうずみ:</span>
+        <span class="text-lg" x-text="`${dataStatus.total}/100 サンプル`"></span>
+      </div>
+
+      <!-- 条件チェック結果 -->
+      <template x-if="!dataStatus.valid">
+        <div class="bg-yellow-100 border-2 border-yellow-400 rounded-lg p-4">
+          <p class="font-bold text-yellow-800 mb-2">⚠️ がくしゅうするにはデータがたりません</p>
+          <p class="text-sm text-yellow-700 mb-3">
+            かくすうじ 3まいいじょう、ごうけい 30まいいじょう ひつよう
+          </p>
+
+          <!-- 数字ごとの収集状況 -->
+          <div class="grid grid-cols-5 gap-2 text-xs">
+            <template x-for="digit in [0,1,2,3,4,5,6,7,8,9]" :key="digit">
+              <div class="text-center bg-white rounded p-2">
+                <div class="font-bold" x-text="digit"></div>
+                <div class="my-1" x-text="`${dataStatus.perDigit[digit]}/10`"></div>
+                <div x-text="dataStatus.perDigit[digit] >= 3 ? '✓' : '✗'"
+                     :class="dataStatus.perDigit[digit] >= 3 ? 'text-green-600' : 'text-red-600'">
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <a href="collect.html" class="block mt-4">
+            <button class="btn-secondary w-full">
+              📝 もじをかく がめんへ
+            </button>
+          </a>
+        </div>
+      </template>
+
+      <template x-if="dataStatus.valid">
+        <div class="bg-green-100 border-2 border-green-400 rounded-lg p-4">
+          <p class="font-bold text-green-800">✓ がくしゅうできます！</p>
+        </div>
+      </template>
+    </div>
+
+    <!-- CNN学習 -->
+    <div class="card">
+      <h2 class="text-xl font-bold mb-4">CNN がくしゅう（すうじにんしき）</h2>
+
+      <button @click="startCNNTraining()"
+              :disabled="!dataStatus.valid || cnnTraining"
+              class="btn-primary w-full mb-4"
+              :class="!dataStatus.valid || cnnTraining ? 'opacity-50 cursor-not-allowed' : ''">
+        <span x-show="!cnnTraining">🚀 CNN がくしゅうをかいし</span>
+        <span x-show="cnnTraining">⏳ がくしゅうちゅう...</span>
+      </button>
+
+      <template x-if="cnnStatus.status !== 'idle'">
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span x-text="cnnStatus.statusText"></span>
+            <span x-text="`${cnnStatus.progress}%`"></span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" :style="`width: ${cnnStatus.progress}%`"></div>
+          </div>
+          <template x-if="cnnStatus.accuracy > 0">
+            <p class="text-sm mt-2">せいど: <span x-text="`${(cnnStatus.accuracy * 100).toFixed(1)}%`"></span></p>
+          </template>
+        </div>
+      </template>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/api.js"></script>
+  <script>
+    function trainApp() {
+      return {
+        dataStatus: {
+          valid: false,
+          total: 0,
+          perDigit: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          missingDigits: []
+        },
+        cnnTraining: false,
+        cnnTaskId: null,
+        cnnStatus: {
+          status: 'idle', // 'idle' | 'training' | 'completed'
+          statusText: 'たいきちゅう',
+          progress: 0,
+          accuracy: 0
+        },
+
+        async init() {
+          try {
+            console.log('Checking data...');
+            await this.checkData();
+            console.log('Data check complete');
+          } catch (error) {
+            console.error('Initialization error:', error);
+            alert('データの読み込みに失敗しました。\nバックエンドサーバーが起動しているか確認してください。');
+          }
+        },
+
+        async checkData() {
+          try {
+            this.dataStatus = await checkDataRequirements();
+          } catch (error) {
+            console.error('Failed to check data:', error);
+            // フォールバック
+            this.dataStatus = {
+              valid: false,
+              total: 0,
+              perDigit: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+              missingDigits: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+            };
+            throw error;
+          }
+        },
+
+        async startCNNTraining() {
+          if (!this.dataStatus.valid) {
+            alert('データがたりません。もじをかくがめんでデータをしゅうしゅうしてください。');
+            return;
+          }
+
+          this.cnnTraining = true;
+          this.cnnStatus.status = 'training';
+          this.cnnStatus.statusText = 'がくしゅうをかいし...';
+          this.cnnStatus.progress = 0;
+          this.cnnStatus.accuracy = 0;
+
+          try {
+            // 1. 学習を開始
+            const response = await startCNNTraining(20, 16);
+            this.cnnTaskId = response.taskId;
+
+            // 2. ポーリングで進捗を監視
+            await this.pollTrainingStatus();
+
+          } catch (error) {
+            console.error('CNN training error:', error);
+            alert('学習中にエラーが発生しました: ' + error.message);
+            this.cnnStatus.status = 'idle';
+            this.cnnTraining = false;
+          }
+        },
+
+        async pollTrainingStatus() {
+          const pollInterval = setInterval(async () => {
+            try {
+              const status = await getTrainingStatus(this.cnnTaskId);
+
+              if (!status) {
+                clearInterval(pollInterval);
+                this.cnnStatus.status = 'idle';
+                this.cnnTraining = false;
+                alert('学習状況の取得に失敗しました。');
+                return;
+              }
+
+              // 進捗更新
+              this.cnnStatus.progress = Math.round(status.progress);
+              this.cnnStatus.accuracy = status.accuracy || 0;
+              this.cnnStatus.statusText = `エポック ${status.epoch}/${status.totalEpochs}`;
+
+              // 完了チェック
+              if (status.status === 'completed') {
+                clearInterval(pollInterval);
+                this.cnnStatus.status = 'completed';
+                this.cnnStatus.statusText = 'がくしゅうかんりょう！';
+                this.cnnStatus.progress = 100;
+                this.cnnTraining = false;
+
+                alert(`CNN学習が完了しました！\n精度: ${(status.accuracy * 100).toFixed(1)}%`);
+              } else if (status.status === 'failed') {
+                clearInterval(pollInterval);
+                this.cnnStatus.status = 'idle';
+                this.cnnTraining = false;
+                alert('学習に失敗しました: ' + (status.error || '不明なエラー'));
+              }
+
+            } catch (error) {
+              console.error('Failed to poll training status:', error);
+              clearInterval(pollInterval);
+              this.cnnStatus.status = 'idle';
+              this.cnnTraining = false;
+              alert('学習状況の監視中にエラーが発生しました。');
+            }
+          }, 1000); // 1秒ごとにポーリング
+        }
+      }
+    }
+  </script>
+</body>
+</html>
