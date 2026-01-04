@@ -106,7 +106,7 @@
 
       <div class="flex items-center justify-between mb-4">
         <span class="font-semibold">しゅうしゅうずみ:</span>
-        <span class="text-lg" x-text="`${dataStatus.total}/100 サンプル`"></span>
+        <span class="text-lg" x-text="`${dataStatus.total}/70000 サンプル`"></span>
       </div>
 
       <!-- 条件チェック結果 -->
@@ -122,7 +122,7 @@
             <template x-for="digit in [0,1,2,3,4,5,6,7,8,9]" :key="digit">
               <div class="text-center bg-white rounded p-2">
                 <div class="font-bold" x-text="digit"></div>
-                <div class="my-1" x-text="`${dataStatus.perDigit[digit]}/10`"></div>
+                <div class="my-1" x-text="`${dataStatus.perDigit[digit]}/7000`"></div>
                 <div x-text="dataStatus.perDigit[digit] >= 3 ? '✓' : '✗'"
                      :class="dataStatus.perDigit[digit] >= 3 ? 'text-green-600' : 'text-red-600'">
                 </div>

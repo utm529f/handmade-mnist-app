@@ -13,6 +13,14 @@ def save_sample(digit: int, image_data: List[float]) -> int:
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
+    # 現在のカウントをチェック
+    cursor.execute("SELECT COUNT(*) FROM samples WHERE digit = ?", (digit,))
+    current_count = cursor.fetchone()[0]
+
+    if current_count >= 7000:
+        conn.close()
+        raise Exception(f"Maximum samples (7000) reached for digit {digit}")
+
     # Float32Arrayをバイナリに変換
     image_array = np.array(image_data, dtype=np.float32)
     image_blob = image_array.tobytes()
@@ -26,6 +34,22 @@ def save_sample(digit: int, image_data: List[float]) -> int:
     conn.close()
 
     return sample_id
+
+def reset_all_data():
+    """Delete all samples, models, and game history"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("DELETE FROM samples")
+        cursor.execute("DELETE FROM models")
+        cursor.execute("DELETE FROM game_history")
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()
 
 def get_data_status() -> Dict:
     """データ収集状況を取得"""
@@ -45,13 +69,19 @@ def get_data_status() -> Dict:
     missing_digits = [d for d in range(10) if per_digit[d] < 3]
     valid = len(missing_digits) == 0 and total >= 30
 
+    # 上限到達チェック
+    at_max_digits = [d for d in range(10) if per_digit[d] >= 7000]
+
     conn.close()
 
     return {
         "valid": valid,
         "total": total,
         "perDigit": per_digit,
-        "missingDigits": missing_digits
+        "missingDigits": missing_digits,
+        "atMaxDigits": at_max_digits,
+        "maxPerDigit": 7000,
+        "maxTotal": 70000
     }
 
 def get_random_sample_by_digit(digit: int) -> Optional[Dict]:

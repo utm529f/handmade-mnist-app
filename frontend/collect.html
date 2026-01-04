@@ -97,6 +97,9 @@
         <a href="index.html" class="text-sm text-gray-600 hover:text-gray-900">
           ← メニューへもどる
         </a>
+        <button @click="confirmReset()" class="ml-4 text-sm text-red-600 hover:text-red-800 font-bold">
+          🗑️ すべてのデータをリセット
+        </button>
       </div>
     </div>
 
@@ -106,7 +109,7 @@
         「<span class="text-primary" x-text="currentDigit"></span>」をかいてね
       </h2>
       <p class="text-sm text-gray-600">
-        <span x-text="digitProgress[currentDigit]"></span> / 10 まい
+        <span x-text="digitProgress[currentDigit]"></span> / 7000 まい
       </p>
     </div>
 
@@ -166,11 +169,11 @@
       <div class="mb-4">
         <div class="flex justify-between text-sm mb-1">
           <span>すうじ <span x-text="currentDigit"></span></span>
-          <span x-text="`${digitProgress[currentDigit]}/10`"></span>
+          <span x-text="`${digitProgress[currentDigit]}/7000`"></span>
         </div>
         <div class="progress-bar">
           <div class="progress-fill"
-               :style="`width: ${(digitProgress[currentDigit] / 10) * 100}%`">
+               :style="`width: ${(digitProgress[currentDigit] / 7000) * 100}%`">
           </div>
         </div>
       </div>
@@ -179,11 +182,11 @@
       <div class="mb-4">
         <div class="flex justify-between text-sm mb-1">
           <span>ぜんたい</span>
-          <span x-text="`${totalSamples}/100`"></span>
+          <span x-text="`${totalSamples}/70000`"></span>
         </div>
         <div class="progress-bar">
           <div class="progress-fill"
-               :style="`width: ${(totalSamples / 100) * 100}%`">
+               :style="`width: ${(totalSamples / 70000) * 100}%`">
           </div>
         </div>
       </div>
@@ -197,10 +200,10 @@
               <div class="font-bold" x-text="digit"></div>
               <div class="progress-bar h-2">
                 <div class="progress-fill"
-                     :style="`width: ${(digitProgress[digit] / 10) * 100}%`">
+                     :style="`width: ${(digitProgress[digit] / 7000) * 100}%`">
                 </div>
               </div>
-              <div x-text="`${digitProgress[digit]}/10`"></div>
+              <div x-text="`${digitProgress[digit]}/7000`"></div>
             </div>
           </template>
         </div>
@@ -252,14 +255,14 @@
         },
 
         findNextDigit() {
-          // 10枚未満の最初の数字を探す
+          // 7000枚未満の最初の数字を探す
           for (let digit = 0; digit < 10; digit++) {
-            if (this.digitProgress[digit] < 10) {
+            if (this.digitProgress[digit] < 7000) {
               this.currentDigit = digit;
               return;
             }
           }
-          // すべて10枚以上なら0に戻る
+          // すべて7000枚以上なら0に戻る
           this.currentDigit = 0;
         },
 
@@ -281,7 +284,7 @@
           // 収集状況に応じた色
           if (count === 0) {
             baseClass += 'bg-gray-200 text-gray-500 ';
-          } else if (count < 10) {
+          } else if (count < 7000) {
             baseClass += 'bg-yellow-400 text-white ';
           } else {
             baseClass += 'bg-emerald-500 text-white ';
@@ -297,7 +300,7 @@
 
         getDigitButtonText(digit) {
           const count = this.digitProgress[digit];
-          if (count >= 10) {
+          if (count >= 7000) {
             return `${digit} ✓`;
           }
           return digit;
@@ -305,8 +308,8 @@
 
         getDigitButtonSubText(digit) {
           const count = this.digitProgress[digit];
-          if (count > 0 && count < 10) {
-            return `${count}/10`;
+          if (count > 0 && count < 7000) {
+            return `${count}/7000`;
           }
           return '';
         },
@@ -318,6 +321,14 @@
           saveButton.textContent = 'ほぞんちゅう...';
 
           try {
+            // 7000枚到達チェック
+            if (this.digitProgress[this.currentDigit] >= 7000) {
+              alert(`すうじ ${this.currentDigit} はすでに7000まいしゅうしゅうずみです。`);
+              saveButton.textContent = originalText;
+              saveButton.disabled = false;
+              return;
+            }
+
             // 画像データを取得
             const imageData = this.canvasHandler.getImageData();
 
@@ -333,12 +344,12 @@
             // Canvasをクリア
             this.clearCanvas();
 
-            // 10枚達成したら次の数字へ
-            if (this.digitProgress[this.currentDigit] >= 10) {
+            // 7000枚達成したら次の数字へ
+            if (this.digitProgress[this.currentDigit] >= 7000) {
               const previousDigit = this.currentDigit;
               this.findNextDigit();
               if (this.currentDigit !== previousDigit) {
-                alert(`すうじ ${previousDigit} のしゅうしゅうが10まいたっせい！\nつぎは ${this.currentDigit} をかきましょう。`);
+                alert(`すうじ ${previousDigit} のしゅうしゅうが7000まいたっせい！\nつぎは ${this.currentDigit} をかきましょう。`);
               }
             }
 
@@ -352,6 +363,38 @@
             alert('ほぞんにしっぱいしました。\nバックエンドサーバーが起動しているか確認してください。\n' + (error.message || ''));
             saveButton.textContent = originalText;
             saveButton.disabled = false;
+          }
+        },
+
+        async confirmReset() {
+          const confirmed = confirm(
+            '⚠️ けいこく ⚠️\n\n' +
+            'すべてのデータ（サンプル・モデル・ゲームれきし）がさくじょされます。\n' +
+            'このそうさはもとにもどせません。\n\n' +
+            'ほんとうにリセットしますか？'
+          );
+
+          if (!confirmed) {
+            return;
+          }
+
+          try {
+            showLoading('データをリセットちゅう...');
+
+            await resetAllData();
+
+            // Reset local state
+            this.digitProgress = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            this.totalSamples = 0;
+            this.currentDigit = 0;
+            this.clearCanvas();
+
+            hideLoading();
+            alert('✅ すべてのデータをリセットしました。');
+          } catch (error) {
+            hideLoading();
+            console.error('Reset error:', error);
+            alert('リセットにしっぱいしました。\n' + (error.message || ''));
           }
         }
       }

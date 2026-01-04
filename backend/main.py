@@ -44,6 +44,15 @@ async def get_random_sample(digit: int):
         raise HTTPException(status_code=404, detail=f"No samples found for digit {digit}")
     return sample
 
+@app.delete("/api/data/reset")
+async def reset_all_data():
+    """Delete all samples, models, and game history"""
+    try:
+        crud.reset_all_data()
+        return {"message": "All data reset successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # モデル学習API
 @app.post("/api/train/cnn", response_model=schemas.TrainResponse)
 async def start_cnn_training(request: schemas.TrainRequest):

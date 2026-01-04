@@ -47,6 +47,22 @@ async function checkDataRequirements() {
 }
 
 /**
+ * Reset all data (samples, models, game history)
+ * @returns {Promise<Object>} Response message
+ */
+async function resetAllData() {
+  const response = await fetch(`${API_BASE_URL}/api/data/reset`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to reset data: ${response.statusText}`);
+  }
+
+  return await response.json();
+}
+
+/**
  * 指定した数字のランダムサンプルを取得
  * @param {number} digit - 数字 (0-9)
  * @returns {Promise<Object>} { id, digit, imageData }

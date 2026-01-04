@@ -113,7 +113,7 @@
         <!-- データ収集状況 -->
         <div class="flex items-center justify-between">
           <span class="font-semibold">しゅうしゅうずみ:</span>
-          <span class="text-lg" x-text="`${status.total}/100 サンプル`"></span>
+          <span class="text-lg" x-text="`${status.total}/70000 サンプル`"></span>
         </div>
 
         <!-- モデル学習状況 -->
@@ -134,6 +134,17 @@
         <li>「がくしゅう」でコンピュータにおぼえてもらう</li>
         <li>「ゲームであそぶ」でさんすうもんだいにちょうせん！</li>
       </ol>
+    </div>
+
+    <!-- リセットボタン -->
+    <div class="card mt-4 bg-red-50 border-2 border-red-200">
+      <h3 class="text-lg font-bold mb-2 text-red-800">⚠️ データのリセット</h3>
+      <p class="text-sm text-red-700 mb-3">
+        すべてのサンプル、モデル、ゲームれきしをさくじょします。
+      </p>
+      <button @click="confirmReset()" class="w-full py-3 px-4 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 transition-all">
+        🗑️ すべてのデータをリセット
+      </button>
     </div>
   </div>
 
@@ -182,6 +193,35 @@
             this.status.total = 0;
             this.status.modelStatus = 'みがくしゅう';
             this.status.modelTrained = false;
+          }
+        },
+
+        async confirmReset() {
+          const confirmed = confirm(
+            '⚠️ けいこく ⚠️\n\n' +
+            'すべてのデータ（サンプル・モデル・ゲームれきし）がさくじょされます。\n' +
+            'このそうさはもとにもどせません。\n\n' +
+            'ほんとうにリセットしますか？'
+          );
+
+          if (!confirmed) {
+            return;
+          }
+
+          try {
+            showLoading('データをリセットちゅう...');
+
+            await resetAllData();
+
+            // Refresh status
+            await this.updateStatus();
+
+            hideLoading();
+            alert('✅ すべてのデータをリセットしました。');
+          } catch (error) {
+            hideLoading();
+            console.error('Reset error:', error);
+            alert('リセットにしっぱいしました。\n' + (error.message || ''));
           }
         }
       }

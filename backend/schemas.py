@@ -15,6 +15,9 @@ class DataStatus(BaseModel):
     total: int
     perDigit: List[int]
     missingDigits: List[int]
+    atMaxDigits: List[int]
+    maxPerDigit: int
+    maxTotal: int
 
 class SampleDigitResponse(BaseModel):
     id: int
