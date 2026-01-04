@@ -5,7 +5,7 @@
 // API base URL (開発環境とプロダクションで切り替え)
 const API_BASE_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:8000'
-  : '';  // プロダクションでは同じドメイン
+  : 'https://handmade-mnist-backend.onrender.com';
 
 /**
  * サンプルデータを保存
