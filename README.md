@@ -291,7 +291,3 @@ print(response.json())
 ## ライセンス
 
 MIT License
-
-## 作者
-
-てづくりMNIST プロジェクト
